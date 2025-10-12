@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # Banco de dados PostgreSQL
+  postgres:
+    image: postgres:15
+    container_name: ruviopay-postgres
+    environment:
+      POSTGRES_DB: ruviopay
+      POSTGRES_USER: ruviopay_user
+      POSTGRES_PASSWORD: senha123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ruviopay-network
+
+  # Backend FastAPI
+  backend:
+    build: ./backend
+    container_name: ruviopay-backend
+    environment:
+      DATABASE_URL: postgresql://ruviopay_user:senha123@postgres:5432/ruviopay
+      SECRET_KEY: "your-secret-key-here-change-in-production"
+      DEBUG: "true"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+    networks:
+      - ruviopay-network
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # Frontend React
+  frontend:
+    build: ./frontend
+    container_name: ruviopay-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - ruviopay-network
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+
+volumes:
+  postgres_data:
+
+networks:
+  ruviopay-network:
+    driver: bridge
