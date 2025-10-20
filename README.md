@@ -331,10 +331,6 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 **⭐ Se este projeto te ajudou, dê uma estrela! ⭐**
 
-[![GitHub stars](https://img.shields.io/github/stars/VitorFeuser/RuViPay.svg?style=social&label=Star)](https://github.com/VitorFeuser/RuViPay)
-[![GitHub forks](https://img.shields.io/github/forks/VitorFeuser/RuViPay.svg?style=social&label=Fork)](https://github.com/VitorFeuser/RuViPay/fork)
-
-**Feito com ❤️ por [Vitor Feuser](https://github.com/VitorFeuser)**
 
 </div>
 ```
