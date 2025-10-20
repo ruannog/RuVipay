@@ -44,7 +44,8 @@ export const useCreateTransaction = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: apiService.createTransaction,
+    mutationFn: (transaction: Omit<Transaction, 'id' | 'status'>) => 
+      apiService.createTransaction(transaction),
     onSuccess: () => {
       // Invalidar queries relacionadas para refetch automático
       queryClient.invalidateQueries({ queryKey: ['transactions'] })

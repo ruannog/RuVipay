@@ -1,131 +1,78 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
-
 from app.database import get_db
-from app.models.models import Category
-from app.schemas.schemas import Category as CategorySchema, CategoryCreate, CategoryUpdate
-from app.services.auth import get_current_user
+from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
+from app.services.category_service import (
+    get_categories_by_user, get_categories_by_type, get_category_by_id,
+    create_category, update_category, delete_category
+)
+from app.api.endpoints.auth import get_current_user
 
-router = APIRouter()
+router = APIRouter(prefix="/categories", tags=["categories"])
 
-@router.get("/", response_model=List[CategorySchema])
-async def get_categories(
-    type: str = None,  # 'receita' ou 'despesa'
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+@router.get("/", response_model=List[CategoryResponse])
+def get_user_categories(
+    category_type: str = None,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Buscar todas as categorias do usuário"""
-    query = db.query(Category).filter(Category.user_id == current_user.id)
-    
-    if type:
-        query = query.filter(Category.type == type)
-    
-    categories = query.all()
-    return categories
+    """Obter todas as categorias do usuário"""
+    if category_type:
+        return get_categories_by_type(db, current_user.id, category_type)
+    return get_categories_by_user(db, current_user.id)
 
-@router.get("/{category_id}", response_model=CategorySchema)
-async def get_category(
+@router.get("/{category_id}", response_model=CategoryResponse)
+def get_category(
     category_id: int,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Buscar uma categoria específica"""
-    category = db.query(Category).filter(
-        Category.id == category_id,
-        Category.user_id == current_user.id
-    ).first()
-    
+    """Obter uma categoria específica"""
+    category = get_category_by_id(db, category_id, current_user.id)
     if not category:
-        raise HTTPException(status_code=404, detail="Categoria não encontrada")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
     return category
 
-@router.post("/", response_model=CategorySchema)
-async def create_category(
+@router.post("/", response_model=CategoryResponse)
+def create_new_category(
     category: CategoryCreate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """Criar uma nova categoria"""
-    # Verificar se já existe uma categoria com o mesmo nome e tipo
-    existing_category = db.query(Category).filter(
-        Category.name == category.name,
-        Category.type == category.type,
-        Category.user_id == current_user.id
-    ).first()
-    
-    if existing_category:
-        raise HTTPException(
-            status_code=400,
-            detail="Já existe uma categoria com esse nome e tipo"
-        )
-    
-    db_category = Category(
-        **category.dict(),
-        user_id=current_user.id
-    )
-    
-    db.add(db_category)
-    db.commit()
-    db.refresh(db_category)
-    
-    return db_category
+    return create_category(db, category, current_user.id)
 
-@router.put("/{category_id}", response_model=CategorySchema)
-async def update_category(
+@router.put("/{category_id}", response_model=CategoryResponse)
+def update_existing_category(
     category_id: int,
     category_update: CategoryUpdate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """Atualizar uma categoria"""
-    db_category = db.query(Category).filter(
-        Category.id == category_id,
-        Category.user_id == current_user.id
-    ).first()
-    
-    if not db_category:
-        raise HTTPException(status_code=404, detail="Categoria não encontrada")
-    
-    # Atualizar apenas os campos fornecidos
-    update_data = category_update.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_category, field, value)
-    
-    db.commit()
-    db.refresh(db_category)
-    
-    return db_category
+    category = update_category(db, category_id, category_update, current_user.id)
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+    return category
 
 @router.delete("/{category_id}")
-async def delete_category(
+def delete_existing_category(
     category_id: int,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """Deletar uma categoria"""
-    db_category = db.query(Category).filter(
-        Category.id == category_id,
-        Category.user_id == current_user.id
-    ).first()
-    
-    if not db_category:
-        raise HTTPException(status_code=404, detail="Categoria não encontrada")
-    
-    # Verificar se há transações usando esta categoria
-    from app.models.models import Transaction
-    transactions_count = db.query(Transaction).filter(
-        Transaction.category_id == category_id
-    ).count()
-    
-    if transactions_count > 0:
+    success = delete_category(db, category_id, current_user.id)
+    if not success:
         raise HTTPException(
-            status_code=400,
-            detail="Não é possível deletar categoria que possui transações"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
         )
-    
-    db.delete(db_category)
-    db.commit()
-    
-    return {"message": "Categoria deletada com sucesso"}
+    return {"message": "Category deleted successfully"}

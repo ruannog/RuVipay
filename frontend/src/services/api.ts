@@ -25,7 +25,7 @@ export interface Transaction {
   description: string
   amount: number
   type: 'income' | 'expense'
-  category: string
+  category?: string
   date: string
   status: 'completed' | 'pending'
 }

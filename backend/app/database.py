@@ -6,9 +6,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://ruviopay_user:senha123@localhost:5432/ruviopay")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./ruviopay.db")
 
-engine = create_engine(DATABASE_URL)
+# Para SQLite, configurar para aceitar conexões de threads diferentes
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(
+        DATABASE_URL, 
+        connect_args={"check_same_thread": False}
+    )
+else:
+    engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

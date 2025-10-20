@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import TransactionModal from '../components/TransactionModal'
 
 interface Transaction {
   id: string
@@ -27,6 +28,7 @@ const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all')
   const [showFilters, setShowFilters] = useState(false)
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false)
 
   // Mock data - substituir por dados reais da API
   const transactions: Transaction[] = [
@@ -122,7 +124,10 @@ const Transactions = () => {
             <Download className="h-4 w-4 mr-1" />
             Exportar
           </button>
-          <button className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+          <button 
+            onClick={() => setTransactionModalOpen(true)}
+            className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+          >
             <Plus className="h-4 w-4 mr-1" />
             Nova Transação
           </button>
@@ -323,6 +328,12 @@ const Transactions = () => {
           </div>
         )}
       </div>
+
+      {/* Transaction Modal */}
+      <TransactionModal 
+        isOpen={transactionModalOpen} 
+        onClose={() => setTransactionModalOpen(false)}
+      />
     </div>
   )
 }
