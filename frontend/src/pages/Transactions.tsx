@@ -8,18 +8,21 @@ import {
   ArrowDownIcon,
   MoreHorizontal,
   Edit,
-  Trash2
+  Trash2,
+  CreditCard
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import TransactionModal from '../components/TransactionModal'
+import EmptyState from '../components/EmptyState'
+import { useTransactions, useDeleteTransaction, useSearchTransactions } from '../hooks/useApi'
 
 interface Transaction {
   id: string
   description: string
   amount: number
   type: 'income' | 'expense'
-  category: string
+  category?: string
   date: string
   status: 'completed' | 'pending'
 }
@@ -29,64 +32,46 @@ const Transactions = () => {
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all')
   const [showFilters, setShowFilters] = useState(false)
   const [transactionModalOpen, setTransactionModalOpen] = useState(false)
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
-  // Mock data - substituir por dados reais da API
-  const transactions: Transaction[] = [
+  // Hooks da API
+  const { data: apiTransactions, isLoading, error } = useTransactions()
+  const deleteTransactionMutation = useDeleteTransaction()
+
+  // Mock data - usado quando não há dados da API ou como fallback
+  const mockTransactions: Transaction[] = [
     {
-      id: '1',
-      description: 'Salário Janeiro',
-      amount: 3500.00,
-      type: 'income',
-      category: 'Salário',
-      date: '2024-01-15',
-      status: 'completed'
+      id: "1",
+      description: "Salário Janeiro",
+      amount: 3500.0,
+      type: "income",
+      category: "Salário",
+      date: "2024-01-15",
+      status: "completed"
     },
     {
-      id: '2',
-      description: 'Supermercado Pão de Açúcar',
+      id: "2", 
+      description: "Supermercado",
       amount: 280.50,
-      type: 'expense',
-      category: 'Alimentação',
-      date: '2024-01-14',
-      status: 'completed'
-    },
-    {
-      id: '3',
-      description: 'Freelance Website',
-      amount: 1200.00,
-      type: 'income',
-      category: 'Trabalho',
-      date: '2024-01-13',
-      status: 'pending'
-    },
-    {
-      id: '4',
-      description: 'Combustível Shell',
-      amount: 120.00,
-      type: 'expense',
-      category: 'Transporte',
-      date: '2024-01-12',
-      status: 'completed'
-    },
-    {
-      id: '5',
-      description: 'Academia Smart Fit',
-      amount: 89.90,
-      type: 'expense',
-      category: 'Saúde',
-      date: '2024-01-11',
-      status: 'completed'
-    },
-    {
-      id: '6',
-      description: 'Dividendos ITUB4',
-      amount: 45.30,
-      type: 'income',
-      category: 'Investimentos',
-      date: '2024-01-10',
-      status: 'completed'
+      type: "expense",
+      category: "Alimentação",
+      date: "2024-01-14",
+      status: "completed"
     }
   ]
+
+  // Usar dados da API se disponíveis, senão usar mock
+  const allTransactions = apiTransactions && apiTransactions.length > 0 ? apiTransactions : mockTransactions
+
+  // Filtrar transações localmente em tempo real
+  const transactions = allTransactions.filter(transaction => {
+    const matchesSearch = searchTerm === '' || 
+                         transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (transaction.category && transaction.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         transaction.date.includes(searchTerm)
+    const matchesType = filterType === 'all' || transaction.type === filterType
+    return matchesSearch && matchesType
+  })
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -99,12 +84,27 @@ const Transactions = () => {
     return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR })
   }
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.category.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = filterType === 'all' || transaction.type === filterType
-    return matchesSearch && matchesType
-  })
+  const handleDeleteTransaction = async (transactionId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
+      try {
+        await deleteTransactionMutation.mutateAsync(transactionId)
+        alert('Transação excluída com sucesso!')
+      } catch (error) {
+        console.error('Erro ao excluir transação:', error)
+        alert('Erro ao excluir transação. Tente novamente.')
+      }
+    }
+  }
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction)
+    setTransactionModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setTransactionModalOpen(false)
+    setEditingTransaction(null)
+  }
 
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -134,68 +134,90 @@ const Transactions = () => {
         </div>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-red-700">
+                Erro ao carregar transações. Usando dados offline.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ArrowUpIcon className="h-6 w-6 text-green-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Receitas
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {formatCurrency(totalIncome)}
-                  </dd>
-                </dl>
+      {!isLoading && (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <ArrowUpIcon className="h-6 w-6 text-green-400" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Total Receitas
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {formatCurrency(totalIncome)}
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ArrowDownIcon className="h-6 w-6 text-red-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Despesas
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {formatCurrency(totalExpense)}
-                  </dd>
-                </dl>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <ArrowDownIcon className="h-6 w-6 text-red-400" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Total Despesas
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {formatCurrency(totalExpense)}
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className={`h-6 w-6 rounded-full ${totalIncome - totalExpense >= 0 ? 'bg-green-400' : 'bg-red-400'}`} />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Saldo
-                  </dt>
-                  <dd className={`text-lg font-medium ${totalIncome - totalExpense >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(totalIncome - totalExpense)}
-                  </dd>
-                </dl>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className={`h-6 w-6 rounded-full ${totalIncome - totalExpense >= 0 ? 'bg-green-400' : 'bg-red-400'}`} />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Saldo
+                    </dt>
+                    <dd className={`text-lg font-medium ${totalIncome - totalExpense >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(totalIncome - totalExpense)}
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white shadow rounded-lg">
@@ -263,7 +285,7 @@ const Transactions = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredTransactions.map((transaction) => (
+            {transactions.map((transaction) => (
               <tr key={transaction.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -284,7 +306,7 @@ const Transactions = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {transaction.category}
+                  {transaction.category || 'Sem categoria'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {formatDate(transaction.date)}
@@ -306,10 +328,19 @@ const Transactions = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center space-x-2">
-                    <button className="text-blue-600 hover:text-blue-900">
+                    <button 
+                      onClick={() => handleEditTransaction(transaction)}
+                      className="text-blue-600 hover:text-blue-900"
+                      title="Editar transação"
+                    >
                       <Edit className="h-4 w-4" />
                     </button>
-                    <button className="text-red-600 hover:text-red-900">
+                    <button 
+                      onClick={() => handleDeleteTransaction(transaction.id)}
+                      className="text-red-600 hover:text-red-900"
+                      title="Excluir transação"
+                      disabled={deleteTransactionMutation.isPending}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                     <button className="text-gray-400 hover:text-gray-600">
@@ -322,17 +353,32 @@ const Transactions = () => {
           </tbody>
         </table>
 
-        {filteredTransactions.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Nenhuma transação encontrada</p>
-          </div>
+        {transactions.length === 0 && !isLoading && (
+          <>
+            {transactions.length === 0 ? (
+              <EmptyState
+                title="Nenhuma transação cadastrada"
+                description="Comece adicionando sua primeira transação para acompanhar suas receitas e despesas."
+                actionText="Adicionar primeira transação"
+                onAction={() => setTransactionModalOpen(true)}
+                icon={CreditCard}
+              />
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500">
+                  Nenhuma transação encontrada com os filtros aplicados
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {/* Transaction Modal */}
       <TransactionModal 
         isOpen={transactionModalOpen} 
-        onClose={() => setTransactionModalOpen(false)}
+        onClose={handleCloseModal}
+        transaction={editingTransaction}
       />
     </div>
   )

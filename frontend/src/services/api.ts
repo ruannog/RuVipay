@@ -64,44 +64,108 @@ export interface UserProfile {
 export const apiService = {
   // Transactions
   async getTransactions(): Promise<Transaction[]> {
-    const response = await api.get('/transactions')
-    return response.data.data
+    try {
+      const response = await api.get('/transactions')
+      // O backend retorna { status: "success", data: [...] }
+      return response.data.data || response.data || []
+    } catch (error) {
+      console.error('Erro ao buscar transações:', error)
+      return []
+    }
+  },
+
+  async searchTransactions(params: {
+    q?: string;
+    start_date?: string;
+    end_date?: string;
+    category?: string;
+    type?: string;
+  }): Promise<Transaction[]> {
+    try {
+      const searchParams = new URLSearchParams()
+      if (params.q) searchParams.append('q', params.q)
+      if (params.start_date) searchParams.append('start_date', params.start_date)
+      if (params.end_date) searchParams.append('end_date', params.end_date)
+      if (params.category) searchParams.append('category', params.category)
+      if (params.type) searchParams.append('type', params.type)
+      
+      const response = await api.get(`/transactions/search?${searchParams.toString()}`)
+      return response.data.data || response.data || []
+    } catch (error) {
+      console.error('Erro ao buscar transações:', error)
+      return []
+    }
   },
 
   async getTransaction(id: string): Promise<Transaction> {
-    const response = await api.get(`/transactions/${id}`)
-    return response.data.data
+    try {
+      const response = await api.get(`/transactions/${id}`)
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao buscar transação:', error)
+      throw error
+    }
   },
 
   async createTransaction(transaction: Omit<Transaction, 'id' | 'status'>): Promise<Transaction> {
-    const response = await api.post('/transactions', transaction)
-    return response.data.data
+    try {
+      const response = await api.post('/transactions', transaction)
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao criar transação:', error)
+      throw error
+    }
   },
 
   async updateTransaction(id: string, transaction: Partial<Transaction>): Promise<Transaction> {
-    const response = await api.put(`/transactions/${id}`, transaction)
-    return response.data.data
+    try {
+      const response = await api.put(`/transactions/${id}`, transaction)
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao atualizar transação:', error)
+      throw error
+    }
   },
 
   async deleteTransaction(id: string): Promise<void> {
-    await api.delete(`/transactions/${id}`)
+    try {
+      await api.delete(`/transactions/${id}`)
+    } catch (error) {
+      console.error('Erro ao deletar transação:', error)
+      throw error
+    }
   },
 
   // Categories
   async getCategories(): Promise<Category[]> {
-    const response = await api.get('/categories')
-    return response.data.data
+    try {
+      const response = await api.get('/categories')
+      return response.data.data || response.data || []
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error)
+      return []
+    }
   },
 
   async createCategory(category: Omit<Category, 'id' | 'transactionCount' | 'totalAmount'>): Promise<Category> {
-    const response = await api.post('/categories', category)
-    return response.data.data
+    try {
+      const response = await api.post('/categories', category)
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao criar categoria:', error)
+      throw error
+    }
   },
 
   // Dashboard
   async getDashboardStats(): Promise<DashboardStats> {
-    const response = await api.get('/dashboard/stats')
-    return response.data.data
+    try {
+      const response = await api.get('/dashboard/stats')
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas:', error)
+      throw error
+    }
   },
 
   async getChartData(): Promise<ChartData> {

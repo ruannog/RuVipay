@@ -37,7 +37,7 @@ const Dashboard = () => {
     setIsOnline(!healthError)
   }, [healthError])
 
-  // Se não conseguir conectar com a API, usar dados mock
+  // Se não conseguir conectar com a API, usar dados vazios para novo usuário
   const stats = statsData ? [
     {
       name: 'Receitas',
@@ -70,30 +70,30 @@ const Dashboard = () => {
   ] : [
     {
       name: 'Receitas',
-      value: 'R$ 3.240,00',
-      change: '+12%',
-      changeType: 'positive' as const,
+      value: 'R$ 0,00',
+      change: '-',
+      changeType: 'neutral' as const,
       icon: TrendingUp,
     },
     {
       name: 'Despesas',
-      value: 'R$ 1.890,00',
-      change: '-8%',
-      changeType: 'negative' as const,
+      value: 'R$ 0,00',
+      change: '-',
+      changeType: 'neutral' as const,
       icon: TrendingDown,
     },
     {
       name: 'Saldo',
-      value: 'R$ 1.350,00',
-      change: '+23%',
-      changeType: 'positive' as const,
+      value: 'R$ 0,00',
+      change: '-',
+      changeType: 'neutral' as const,
       icon: DollarSign,
     },
     {
       name: 'Transações',
-      value: '47',
-      change: '+3',
-      changeType: 'positive' as const,
+      value: '0',
+      change: '-',
+      changeType: 'neutral' as const,
       icon: CreditCard,
     },
   ]
@@ -179,7 +179,9 @@ const Dashboard = () => {
                   className={`ml-2 flex items-baseline text-sm font-semibold ${
                     stat.changeType === 'positive' 
                       ? 'text-green-600' 
-                      : 'text-red-600'
+                      : stat.changeType === 'negative'
+                      ? 'text-red-600'
+                      : 'text-gray-500'
                   }`}
                 >
                   {stat.change}

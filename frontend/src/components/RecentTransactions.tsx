@@ -1,64 +1,16 @@
-import { ArrowUpIcon, ArrowDownIcon, MoreHorizontal } from 'lucide-react'
+import { ArrowUpIcon, ArrowDownIcon, MoreHorizontal, TrendingUp } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-
-interface Transaction {
-  id: string
-  description: string
-  amount: number
-  type: 'income' | 'expense'
-  category: string
-  date: string
-}
+import type { Transaction } from '../services/api'
+import EmptyState from './EmptyState'
 
 interface RecentTransactionsProps {
   transactions?: Transaction[]
 }
 
 const RecentTransactions = ({ transactions: propTransactions }: RecentTransactionsProps) => {
-  // Usar dados da API se disponíveis, senão usar mock data
-  const transactions: Transaction[] = propTransactions || [
-    {
-      id: '1',
-      description: 'Salário',
-      amount: 3500.00,
-      type: 'income',
-      category: 'Salário',
-      date: '2024-01-15'
-    },
-    {
-      id: '2',
-      description: 'Supermercado',
-      amount: 280.50,
-      type: 'expense',
-      category: 'Alimentação',
-      date: '2024-01-14'
-    },
-    {
-      id: '3',
-      description: 'Freelance',
-      amount: 1200.00,
-      type: 'income',
-      category: 'Trabalho',
-      date: '2024-01-13'
-    },
-    {
-      id: '4',
-      description: 'Combustível',
-      amount: 120.00,
-      type: 'expense',
-      category: 'Transporte',
-      date: '2024-01-12'
-    },
-    {
-      id: '5',
-      description: 'Academia',
-      amount: 89.90,
-      type: 'expense',
-      category: 'Saúde',
-      date: '2024-01-11'
-    }
-  ]
+  // Usar dados da API se disponíveis, senão usar array vazio
+  const transactions: Transaction[] = propTransactions || []
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -105,7 +57,7 @@ const RecentTransactions = ({ transactions: propTransactions }: RecentTransactio
                   {transaction.description}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {transaction.category} • {formatDate(transaction.date)}
+                  {transaction.category || 'Sem categoria'} • {formatDate(transaction.date)}
                 </p>
               </div>
             </div>
@@ -128,11 +80,11 @@ const RecentTransactions = ({ transactions: propTransactions }: RecentTransactio
       </div>
 
       {transactions.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500 text-sm">
-            Nenhuma transação encontrada
-          </p>
-        </div>
+        <EmptyState
+          title="Nenhuma transação"
+          description="Suas transações recentes aparecerão aqui quando você adicionar algumas."
+          icon={TrendingUp}
+        />
       )}
     </div>
   )

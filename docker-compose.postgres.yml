@@ -3,12 +3,12 @@ version: '3.8'
 services:
   # Banco de dados PostgreSQL
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
     container_name: ruviopay-postgres
     environment:
       POSTGRES_DB: ruviopay
       POSTGRES_USER: ruviopay_user
-      POSTGRES_PASSWORD: senha123
+      POSTGRES_PASSWORD: ruviopay_pass
     ports:
       - "5432:5432"
     volumes:
@@ -16,28 +16,42 @@ services:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - ruviopay-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ruviopay_user -d ruviopay"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Backend FastAPI
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: ruviopay-backend
     environment:
-      DATABASE_URL: postgresql://ruviopay_user:senha123@postgres:5432/ruviopay
-      SECRET_KEY: "your-secret-key-here-change-in-production"
+      DATABASE_URL: postgresql://ruviopay_user:ruviopay_pass@postgres:5432/ruviopay
+      SECRET_KEY: "ruviopay-secret-key-change-in-production"
       DEBUG: "true"
+      HOST: "0.0.0.0"
+      PORT: "8000"
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./backend:/app
     networks:
       - ruviopay-network
+    restart: unless-stopped
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   # Frontend React
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: ruviopay-frontend
     ports:
       - "3000:3000"
@@ -48,11 +62,13 @@ services:
       - /app/node_modules
     networks:
       - ruviopay-network
+    restart: unless-stopped
     environment:
-      - VITE_API_URL=http://localhost:8000/api/v1
+      - VITE_API_URL=http://localhost:8000
 
 volumes:
   postgres_data:
+    driver: local
 
 networks:
   ruviopay-network:

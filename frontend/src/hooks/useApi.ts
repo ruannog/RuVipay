@@ -31,6 +31,22 @@ export const useTransactions = () => {
   })
 }
 
+export const useSearchTransactions = (searchParams: {
+  q?: string;
+  start_date?: string;
+  end_date?: string;
+  category?: string;
+  type?: string;
+}) => {
+  return useQuery({
+    queryKey: ['transactions', 'search', searchParams],
+    queryFn: () => apiService.searchTransactions(searchParams),
+    enabled: Object.values(searchParams).some(value => value !== undefined && value !== ''),
+    staleTime: 1 * 60 * 1000, // 1 minuto
+    retry: 2
+  })
+}
+
 export const useTransaction = (id: string) => {
   return useQuery({
     queryKey: ['transaction', id],

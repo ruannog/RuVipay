@@ -4,13 +4,13 @@
 
 ![RuViPay Logo](https://img.shields.io/badge/RuViPay-Financial%20Management-blue?style=for-the-badge&logo=wallet)
 
-**Sistema completo de gestão financeira pessoal com arquitetura moderna full-stack**
+**Sistema completo de gestão financeira pessoal com SQLite - Simples e Rápido!**
 
 [![Frontend](https://img.shields.io/badge/Frontend-React%2018-61DAFB?style=flat&logo=react)](http://localhost:3000)
 [![Backend](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi)](http://localhost:8000)
-[![Database](https://img.shields.io/badge/Database-PostgreSQL-336791?style=flat&logo=postgresql)](https://postgresql.org)
+[![Database](https://img.shields.io/badge/Database-SQLite-003B57?style=flat&logo=sqlite)](https://sqlite.org)
 
-[🌐 Demo Online](http://localhost:3000) | [📚 API Docs](http://localhost:8000/docs) | [🐛 Issues](https://github.com/VitorFeuser/RuViPay/issues) | [📖 Wiki](https://github.com/VitorFeuser/RuViPay/wiki)
+[🌐 Frontend](http://localhost:3000) | [📚 API Docs](http://localhost:8000/docs) | [🐛 Issues](https://github.com/ruannog/RuViPay/issues)
 
 </div>
 
@@ -18,7 +18,7 @@
 
 ## 🎯 **Visão Geral**
 
-RuViPay é uma aplicação moderna e completa para gestão financeira pessoal, desenvolvida com as melhores práticas de desenvolvimento web. O sistema permite controle total de receitas, despesas, categorização automática e relatórios detalhados.
+RuViPay é uma aplicação moderna para gestão financeira pessoal, desenvolvida com **SQLite** para máxima simplicidade. Não precisa de Docker, PostgreSQL ou configurações complexas!
 
 ### ✨ **Principais Funcionalidades**
 

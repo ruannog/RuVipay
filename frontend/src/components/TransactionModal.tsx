@@ -1,13 +1,24 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, Plus, Minus } from 'lucide-react'
-import { useCreateTransaction, useCategories } from '../hooks/useApi'
+import { useCreateTransaction, useUpdateTransaction } from '../hooks/useApi'
+
+interface Transaction {
+  id: string
+  description: string
+  amount: number
+  type: 'income' | 'expense'
+  category?: string
+  date: string
+  status?: 'completed' | 'pending'
+}
 
 interface TransactionModalProps {
   isOpen: boolean
   onClose: () => void
+  transaction?: Transaction | null
 }
 
-const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) => {
+const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, transaction }) => {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
@@ -16,21 +27,56 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) 
     date: new Date().toISOString().split('T')[0]
   })
 
-  const { data: categories = [] } = useCategories()
-
   const createTransactionMutation = useCreateTransaction()
+  const updateTransactionMutation = useUpdateTransaction()
+
+  const isEditing = !!transaction
+
+  // Preencher formulário quando estiver editando
+  useEffect(() => {
+    if (transaction) {
+      setFormData({
+        description: transaction.description,
+        amount: transaction.amount.toString(),
+        type: transaction.type,
+        category: transaction.category || '',
+        date: transaction.date.split('T')[0] // Remove time part if exists
+      })
+    } else {
+      setFormData({
+        description: '',
+        amount: '',
+        type: 'income',
+        category: '',
+        date: new Date().toISOString().split('T')[0]
+      })
+    }
+  }, [transaction, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     try {
-      await createTransactionMutation.mutateAsync({
-        description: formData.description,
-        amount: parseFloat(formData.amount),
-        type: formData.type,
-        category: formData.category,
-        date: formData.date
-      })
+      if (isEditing && transaction) {
+        await updateTransactionMutation.mutateAsync({
+          id: transaction.id,
+          transaction: {
+            description: formData.description,
+            amount: parseFloat(formData.amount),
+            type: formData.type,
+            category: formData.category,
+            date: formData.date
+          }
+        })
+      } else {
+        await createTransactionMutation.mutateAsync({
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          type: formData.type,
+          category: formData.category,
+          date: formData.date
+        })
+      }
       
       // Reset form and close modal
       setFormData({
@@ -42,7 +88,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) 
       })
       onClose()
     } catch (error) {
-      console.error('Erro ao criar transação:', error)
+      console.error('Erro ao salvar transação:', error)
     }
   }
 
@@ -71,7 +117,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) 
             <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Nova Transação
+                  {isEditing ? 'Editar Transação' : 'Nova Transação'}
                 </h3>
                 <button
                   type="button"
@@ -171,14 +217,23 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) 
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Selecione uma categoria</option>
-                    {categories
-                      .filter(cat => cat.type === formData.type)
-                      .map(category => (
-                        <option key={category.id} value={category.name}>
-                          {category.name}
-                        </option>
-                      ))
-                    }
+                    {formData.type === 'income' ? (
+                      <>
+                        <option value="Salário">Salário</option>
+                        <option value="Trabalho Extra">Trabalho Extra</option>
+                        <option value="Investimentos">Investimentos</option>
+                        <option value="Vendas">Vendas</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Alimentação">Alimentação</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Lazer">Lazer</option>
+                        <option value="Utilidades">Utilidades</option>
+                        <option value="Compras">Compras</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -203,14 +258,17 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) 
             <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
               <button
                 type="submit"
-                disabled={createTransactionMutation.isPending}
+                disabled={createTransactionMutation.isPending || updateTransactionMutation.isPending}
                 className={`w-full inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm ${
                   formData.type === 'income'
                     ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
                     : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-                } ${createTransactionMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${createTransactionMutation.isPending || updateTransactionMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {createTransactionMutation.isPending ? 'Salvando...' : 'Salvar'}
+                {createTransactionMutation.isPending || updateTransactionMutation.isPending ? 
+                  'Salvando...' : 
+                  isEditing ? 'Atualizar' : 'Salvar'
+                }
               </button>
               <button
                 type="button"
