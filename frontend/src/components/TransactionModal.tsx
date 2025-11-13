@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { X, Plus, Minus } from 'lucide-react'
-import { useCreateTransaction, useUpdateTransaction } from '../hooks/useApi'
+import { useCreateTransaction, useUpdateTransaction, useCategories } from '../hooks/useApi'
 
 interface Transaction {
   id: string
@@ -29,6 +29,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, tr
 
   const createTransactionMutation = useCreateTransaction()
   const updateTransactionMutation = useUpdateTransaction()
+  const { data: categories = [] } = useCategories()
 
   const isEditing = !!transaction
 
@@ -217,23 +218,14 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, tr
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Selecione uma categoria</option>
-                    {formData.type === 'income' ? (
-                      <>
-                        <option value="Salário">Salário</option>
-                        <option value="Trabalho Extra">Trabalho Extra</option>
-                        <option value="Investimentos">Investimentos</option>
-                        <option value="Vendas">Vendas</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="Alimentação">Alimentação</option>
-                        <option value="Transporte">Transporte</option>
-                        <option value="Saúde">Saúde</option>
-                        <option value="Lazer">Lazer</option>
-                        <option value="Utilidades">Utilidades</option>
-                        <option value="Compras">Compras</option>
-                      </>
-                    )}
+                    {categories
+                      .filter(cat => cat.type === formData.type)
+                      .map(category => (
+                        <option key={category.id} value={category.name}>
+                          {category.name}
+                        </option>
+                      ))
+                    }
                   </select>
                 </div>
 

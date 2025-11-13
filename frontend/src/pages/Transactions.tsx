@@ -3,7 +3,6 @@ import {
   Plus, 
   Search, 
   Filter, 
-  Download,
   ArrowUpIcon,
   ArrowDownIcon,
   MoreHorizontal,
@@ -15,7 +14,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import TransactionModal from '../components/TransactionModal'
 import EmptyState from '../components/EmptyState'
-import { useTransactions, useDeleteTransaction, useSearchTransactions } from '../hooks/useApi'
+import { useTransactions, useDeleteTransaction } from '../hooks/useApi'
 
 interface Transaction {
   id: string
@@ -81,7 +80,18 @@ const Transactions = () => {
   }
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR })
+    if (!dateString) return 'Data inválida'
+    
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return 'Data inválida'
+      }
+      return format(date, 'dd/MM/yyyy', { locale: ptBR })
+    } catch (error) {
+      console.error('Erro ao formatar data:', error, dateString)
+      return 'Data inválida'
+    }
   }
 
   const handleDeleteTransaction = async (transactionId: string) => {
@@ -120,10 +130,6 @@ const Transactions = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Transações</h1>
         <div className="flex items-center space-x-3">
-          <button className="inline-flex items-center rounded-md bg-white border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
-            <Download className="h-4 w-4 mr-1" />
-            Exportar
-          </button>
           <button 
             onClick={() => setTransactionModalOpen(true)}
             className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"

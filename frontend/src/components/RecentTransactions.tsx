@@ -20,7 +20,18 @@ const RecentTransactions = ({ transactions: propTransactions }: RecentTransactio
   }
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM', { locale: ptBR })
+    if (!dateString) return 'Data inválida'
+    
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return 'Data inválida'
+      }
+      return format(date, 'dd/MM', { locale: ptBR })
+    } catch (error) {
+      console.error('Erro ao formatar data:', error, dateString)
+      return 'Data inválida'
+    }
   }
 
   return (

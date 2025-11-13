@@ -2,9 +2,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { 
   LayoutDashboard, 
   CreditCard, 
-  Tags, 
-  PieChart,
   TrendingUp,
+  Target,
   Wallet
 } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -12,9 +11,8 @@ import { clsx } from 'clsx'
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Transações', href: '/transactions', icon: CreditCard },
-  { name: 'Categorias', href: '/categories', icon: Tags },
-  { name: 'Relatórios', href: '/reports', icon: PieChart },
-  { name: 'Metas', href: '/goals', icon: TrendingUp },
+  { name: 'Investimentos', href: '/investments', icon: TrendingUp },
+  { name: 'Metas', href: '/goals', icon: Target },
 ]
 
 const Sidebar = () => {

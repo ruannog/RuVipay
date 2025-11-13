@@ -2,7 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
-import Categories from './pages/Categories'
+import Investments from './pages/Investments'
+import Goals from './pages/Goals'
 import Login from './pages/Login'
 import { AuthProvider } from './contexts/AuthContext'
 import Layout from './components/Layout'
@@ -19,7 +20,8 @@ function App() {
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="transactions" element={<Transactions />} />
-              <Route path="categories" element={<Categories />} />
+              <Route path="investments" element={<Investments />} />
+              <Route path="goals" element={<Goals />} />
             </Route>
           </Routes>
         </Router>

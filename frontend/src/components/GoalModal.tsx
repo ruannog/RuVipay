@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { X, Target } from 'lucide-react'
-import { useCategories } from '../hooks/useApi'
+import { X, Target, CheckCircle } from 'lucide-react'
+import { useCategories, useCreateGoal } from '../hooks/useApi'
 
 interface GoalModalProps {
   isOpen: boolean
@@ -20,7 +20,9 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose }) => {
   })
 
   const [isLoading, setIsLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const { data: categories = [] } = useCategories()
+  const createGoalMutation = useCreateGoal()
 
   const goalTypes = [
     { value: 'economia', label: 'Economia/Reserva' },
@@ -54,8 +56,8 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose }) => {
     setIsLoading(true)
     
     try {
-      // Aqui implementaremos a chamada para a API
-      const goalData = {
+      // Usar a mutation para criar a meta
+      await createGoalMutation.mutateAsync({
         title: formData.title,
         goal_type: formData.goal_type,
         target_amount: parseFloat(formData.target_amount),
@@ -63,23 +65,28 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose }) => {
         period_type: formData.period_type,
         start_date: formData.start_date,
         end_date: formData.end_date,
-        category_id: formData.category_id ? parseInt(formData.category_id) : null
-      }
-      
-      console.log('Criando meta:', goalData)
-      
-      // Reset form and close modal
-      setFormData({
-        title: '',
-        goal_type: 'economia',
-        target_amount: '',
-        current_amount: '0',
-        period_type: 'mensal',
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: '',
-        category_id: ''
+        category_id: formData.category_id ? parseInt(formData.category_id) : undefined
       })
-      onClose()
+      
+      // Mostrar mensagem de sucesso
+      setSuccessMessage('Meta criada com sucesso!')
+      
+      // Aguardar um pouco antes de fechar o modal para mostrar a mensagem
+      setTimeout(() => {
+        setSuccessMessage('')
+        // Reset form and close modal
+        setFormData({
+          title: '',
+          goal_type: 'economia',
+          target_amount: '',
+          current_amount: '0',
+          period_type: 'mensal',
+          start_date: new Date().toISOString().split('T')[0],
+          end_date: '',
+          category_id: ''
+        })
+        onClose()
+      }, 1500)
     } catch (error) {
       console.error('Erro ao criar meta:', error)
     } finally {
@@ -149,6 +156,18 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose }) => {
                   <X className="h-6 w-6" />
                 </button>
               </div>
+
+              {/* Success Message */}
+              {successMessage && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+                  <div className="flex">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                    <div className="ml-3">
+                      <p className="text-sm text-green-700">{successMessage}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4">
                 {/* Goal Title */}

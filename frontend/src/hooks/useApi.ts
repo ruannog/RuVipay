@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiService } from '../services/api'
-import type { Transaction, Category, DashboardStats, ChartData, UserProfile } from '../services/api'
+import type { Transaction, Investment, Goal } from '../services/api'
 
 // Dashboard Hooks
 export const useDashboardStats = () => {
@@ -108,17 +108,7 @@ export const useCategories = () => {
     retry: 2
   })
 }
-
-export const useCreateCategory = () => {
-  const queryClient = useQueryClient()
-  
-  return useMutation({
-    mutationFn: apiService.createCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
-    }
-  })
-}
+// Note: category create/delete hooks removed because Categories page was removed.
 
 // User Hooks
 export const useUserProfile = () => {
@@ -138,5 +128,143 @@ export const useHealthCheck = () => {
     refetchInterval: 30 * 1000, // Verificar a cada 30 segundos
     retry: 1,
     retryDelay: 1000
+  })
+}
+
+// Investment Hooks
+export const useInvestments = () => {
+  return useQuery({
+    queryKey: ['investments'],
+    queryFn: apiService.getInvestments,
+    staleTime: 30 * 1000, // 30 segundos
+    retry: 2
+  })
+}
+
+export const useInvestment = (id: string) => {
+  return useQuery({
+    queryKey: ['investment', id],
+    queryFn: () => apiService.getInvestment(id),
+    enabled: !!id,
+    retry: 2
+  })
+}
+
+export const useCreateInvestment = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (investment: Omit<Investment, 'id' | 'status' | 'profit_loss' | 'profit_percentage'>) => 
+      apiService.createInvestment(investment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investments'] })
+      queryClient.invalidateQueries({ queryKey: ['investment-stats'] })
+    },
+    onError: (error) => {
+      console.error('Erro ao criar investimento:', error)
+    }
+  })
+}
+
+export const useUpdateInvestment = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ id, investment }: { id: string; investment: Partial<Investment> }) =>
+      apiService.updateInvestment(id, investment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investments'] })
+      queryClient.invalidateQueries({ queryKey: ['investment-stats'] })
+    }
+  })
+}
+
+export const useDeleteInvestment = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: apiService.deleteInvestment,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investments'] })
+      queryClient.invalidateQueries({ queryKey: ['investment-stats'] })
+    }
+  })
+}
+
+export const useInvestmentStats = () => {
+  return useQuery({
+    queryKey: ['investment-stats'],
+    queryFn: apiService.getInvestmentStats,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    retry: 2
+  })
+}
+
+// Goal Hooks
+export const useGoals = () => {
+  return useQuery({
+    queryKey: ['goals'],
+    queryFn: apiService.getGoals,
+    staleTime: 30 * 1000, // 30 segundos
+    retry: 2
+  })
+}
+
+export const useGoal = (id: string) => {
+  return useQuery({
+    queryKey: ['goal', id],
+    queryFn: () => apiService.getGoal(id),
+    enabled: !!id,
+    retry: 2
+  })
+}
+
+export const useCreateGoal = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (goal: Omit<Goal, 'id' | 'status' | 'progress_percentage'>) => 
+      apiService.createGoal(goal),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['goal-stats'] })
+    },
+    onError: (error) => {
+      console.error('Erro ao criar meta:', error)
+    }
+  })
+}
+
+export const useUpdateGoal = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ id, goal }: { id: string; goal: Partial<Goal> }) =>
+      apiService.updateGoal(id, goal),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['goal-stats'] })
+    }
+  })
+}
+
+export const useDeleteGoal = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: apiService.deleteGoal,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['goal-stats'] })
+    }
+  })
+}
+
+export const useGoalStats = () => {
+  return useQuery({
+    queryKey: ['goal-stats'],
+    queryFn: apiService.getGoalStats,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    retry: 2
   })
 }

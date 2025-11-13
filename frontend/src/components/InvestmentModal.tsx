@@ -1,78 +1,123 @@
-import React, { useState } from 'react'
-import { X, TrendingUp } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X } from 'lucide-react'
+import { useCreateInvestment, useUpdateInvestment } from '../hooks/useApi'
+
+interface Investment {
+  id: string
+  name: string
+  type: string
+  initial_amount: number
+  current_amount: number
+  purchase_date: string
+  description?: string
+  status?: 'active' | 'sold'
+}
 
 interface InvestmentModalProps {
   isOpen: boolean
   onClose: () => void
+  investment?: Investment | null
 }
 
-const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) => {
+const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, investment }) => {
   const [formData, setFormData] = useState({
     name: '',
-    investment_type: 'acao' as 'acao' | 'fundo' | 'cdi' | 'tesouro' | 'cripto' | 'outros',
-    amount_invested: '',
-    current_value: '',
-    purchase_date: new Date().toISOString().split('T')[0]
+    type: 'Renda Fixa',
+    initial_amount: '',
+    current_amount: '',
+    purchase_date: new Date().toISOString().split('T')[0],
+    description: ''
   })
 
-  const [isLoading, setIsLoading] = useState(false)
+  const createInvestmentMutation = useCreateInvestment()
+  const updateInvestmentMutation = useUpdateInvestment()
 
+  const isEditing = !!investment
+
+  // Tipos de investimento disponíveis
   const investmentTypes = [
-    { value: 'acao', label: 'Ação' },
-    { value: 'fundo', label: 'Fundo de Investimento' },
-    { value: 'cdi', label: 'CDB/CDI' },
-    { value: 'tesouro', label: 'Tesouro Direto' },
-    { value: 'cripto', label: 'Criptomoeda' },
-    { value: 'outros', label: 'Outros' }
+    'Renda Fixa',
+    'Ações',
+    'FII',
+    'Cripto',
+    'Commodities',
+    'Outros'
   ]
+
+  // Preencher formulário quando estiver editando
+  useEffect(() => {
+    if (investment) {
+      setFormData({
+        name: investment.name,
+        type: investment.type,
+        initial_amount: investment.initial_amount.toString(),
+        current_amount: investment.current_amount.toString(),
+        purchase_date: investment.purchase_date.split('T')[0], // Remove time part if exists
+        description: investment.description || ''
+      })
+    } else {
+      setFormData({
+        name: '',
+        type: 'Renda Fixa',
+        initial_amount: '',
+        current_amount: '',
+        purchase_date: new Date().toISOString().split('T')[0],
+        description: ''
+      })
+    }
+  }, [investment, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     
     try {
-      // Aqui implementaremos a chamada para a API
-      const investmentData = {
-        name: formData.name,
-        investment_type: formData.investment_type,
-        amount_invested: parseFloat(formData.amount_invested),
-        current_value: parseFloat(formData.current_value),
-        purchase_date: formData.purchase_date
+      if (isEditing && investment) {
+        await updateInvestmentMutation.mutateAsync({
+          id: investment.id,
+          investment: {
+            name: formData.name,
+            type: formData.type,
+            initial_amount: parseFloat(formData.initial_amount),
+            current_amount: parseFloat(formData.current_amount),
+            purchase_date: formData.purchase_date,
+            description: formData.description
+          }
+        })
+        alert('Investimento atualizado com sucesso!')
+      } else {
+        const result = await createInvestmentMutation.mutateAsync({
+          name: formData.name,
+          type: formData.type,
+          initial_amount: parseFloat(formData.initial_amount),
+          current_amount: parseFloat(formData.current_amount),
+          purchase_date: formData.purchase_date,
+          description: formData.description
+        })
+        console.log('Investimento criado:', result)
+        alert('Investimento criado com sucesso!')
       }
-      
-      console.log('Criando investimento:', investmentData)
       
       // Reset form and close modal
       setFormData({
         name: '',
-        investment_type: 'acao',
-        amount_invested: '',
-        current_value: '',
-        purchase_date: new Date().toISOString().split('T')[0]
+        type: 'Renda Fixa',
+        initial_amount: '',
+        current_amount: '',
+        purchase_date: new Date().toISOString().split('T')[0],
+        description: ''
       })
       onClose()
     } catch (error) {
-      console.error('Erro ao criar investimento:', error)
-    } finally {
-      setIsLoading(false)
+      console.error('Erro ao salvar investimento:', error)
+      alert('Erro ao salvar investimento. Tente novamente.')
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }))
-  }
-
-  // Auto-fill current_value with amount_invested if current_value is empty
-  const handleAmountInvestedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setFormData(prev => ({
-      ...prev,
-      amount_invested: value,
-      current_value: prev.current_value || value
     }))
   }
 
@@ -92,14 +137,9 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
           <form onSubmit={handleSubmit}>
             <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <TrendingUp className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <h3 className="ml-3 text-lg font-medium text-gray-900">
-                    Novo Investimento
-                  </h3>
-                </div>
+                <h3 className="text-lg font-medium text-gray-900">
+                  {isEditing ? 'Editar Investimento' : 'Novo Investimento'}
+                </h3>
                 <button
                   type="button"
                   onClick={onClose}
@@ -127,30 +167,31 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
                   />
                 </div>
 
-                {/* Investment Type */}
+                {/* Type */}
                 <div>
-                  <label htmlFor="investment_type" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="type" className="block text-sm font-medium text-gray-700">
                     Tipo de Investimento
                   </label>
                   <select
-                    id="investment_type"
-                    name="investment_type"
-                    value={formData.investment_type}
+                    id="type"
+                    name="type"
+                    value={formData.type}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    required
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
                   >
                     {investmentTypes.map(type => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
+                      <option key={type} value={type}>
+                        {type}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                {/* Amount Invested */}
+                {/* Initial Amount */}
                 <div>
-                  <label htmlFor="amount_invested" className="block text-sm font-medium text-gray-700">
-                    Valor Investido
+                  <label htmlFor="initial_amount" className="block text-sm font-medium text-gray-700">
+                    Valor Inicial Investido
                   </label>
                   <div className="mt-1 relative rounded-md shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -158,22 +199,22 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
                     </div>
                     <input
                       type="number"
-                      id="amount_invested"
-                      name="amount_invested"
-                      value={formData.amount_invested}
-                      onChange={handleAmountInvestedChange}
+                      id="initial_amount"
+                      name="initial_amount"
+                      value={formData.initial_amount}
+                      onChange={handleInputChange}
                       step="0.01"
                       min="0"
                       required
-                      className="block w-full pl-10 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      className="block w-full pl-10 border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
                       placeholder="0,00"
                     />
                   </div>
                 </div>
 
-                {/* Current Value */}
+                {/* Current Amount */}
                 <div>
-                  <label htmlFor="current_value" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="current_amount" className="block text-sm font-medium text-gray-700">
                     Valor Atual
                   </label>
                   <div className="mt-1 relative rounded-md shadow-sm">
@@ -182,14 +223,14 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
                     </div>
                     <input
                       type="number"
-                      id="current_value"
-                      name="current_value"
-                      value={formData.current_value}
+                      id="current_amount"
+                      name="current_amount"
+                      value={formData.current_amount}
                       onChange={handleInputChange}
                       step="0.01"
                       min="0"
                       required
-                      className="block w-full pl-10 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      className="block w-full pl-10 border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
                       placeholder="0,00"
                     />
                   </div>
@@ -211,18 +252,34 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
                   />
                 </div>
 
+                {/* Description */}
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                    Descrição (Opcional)
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
+                    placeholder="Adicione observações sobre este investimento..."
+                  />
+                </div>
+
                 {/* Profit/Loss Indicator */}
-                {formData.amount_invested && formData.current_value && (
+                {formData.initial_amount && formData.current_amount && (
                   <div className="bg-gray-50 p-3 rounded-md">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Resultado:</span>
                       <span className={`text-sm font-medium ${
-                        parseFloat(formData.current_value) >= parseFloat(formData.amount_invested)
+                        parseFloat(formData.current_amount) >= parseFloat(formData.initial_amount)
                           ? 'text-green-600'
                           : 'text-red-600'
                       }`}>
-                        {parseFloat(formData.current_value) >= parseFloat(formData.amount_invested) ? '+' : ''}
-                        {(parseFloat(formData.current_value) - parseFloat(formData.amount_invested)).toLocaleString('pt-BR', {
+                        {parseFloat(formData.current_amount) >= parseFloat(formData.initial_amount) ? '+' : ''}
+                        {(parseFloat(formData.current_amount) - parseFloat(formData.initial_amount)).toLocaleString('pt-BR', {
                           style: 'currency',
                           currency: 'BRL'
                         })}
@@ -236,17 +293,20 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose }) =>
             <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
               <button
                 type="submit"
-                disabled={isLoading}
-                className={`w-full inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm bg-indigo-600 hover:bg-indigo-700 ${
-                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                disabled={createInvestmentMutation.isPending || updateInvestmentMutation.isPending}
+                className={`w-full inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm bg-green-600 hover:bg-green-700 ${
+                  createInvestmentMutation.isPending || updateInvestmentMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {isLoading ? 'Salvando...' : 'Salvar Investimento'}
+                {createInvestmentMutation.isPending || updateInvestmentMutation.isPending 
+                  ? 'Salvando...' 
+                  : (isEditing ? 'Atualizar Investimento' : 'Salvar Investimento')
+                }
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
               >
                 Cancelar
               </button>

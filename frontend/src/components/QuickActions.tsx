@@ -1,4 +1,4 @@
-import { Plus, Minus, TrendingUp, FileText, Target, CreditCard } from 'lucide-react'
+import { Plus, Minus, TrendingUp, Target } from 'lucide-react'
 import { useState } from 'react'
 import TransactionModal from './TransactionModal'
 import InvestmentModal from './InvestmentModal'
@@ -31,13 +31,6 @@ const QuickActions = () => {
       onClick: () => openTransactionModal('expense')
     },
     {
-      name: 'Relatório',
-      description: 'Gerar relatório',
-      icon: FileText,
-      color: 'bg-blue-500 hover:bg-blue-600',
-      onClick: () => console.log('Relatório')
-    },
-    {
       name: 'Meta',
       description: 'Definir meta',
       icon: Target,
@@ -50,13 +43,6 @@ const QuickActions = () => {
       icon: TrendingUp,
       color: 'bg-indigo-500 hover:bg-indigo-600',
       onClick: () => setInvestmentModalOpen(true)
-    },
-    {
-      name: 'Cartão',
-      description: 'Transação cartão',
-      icon: CreditCard,
-      color: 'bg-gray-500 hover:bg-gray-600',
-      onClick: () => openTransactionModal('expense')
     },
   ]
 

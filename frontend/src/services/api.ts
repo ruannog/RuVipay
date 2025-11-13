@@ -60,6 +60,57 @@ export interface UserProfile {
   avatar: string
 }
 
+export interface Investment {
+  id: string
+  name: string
+  type: string
+  initial_amount: number
+  current_amount: number
+  purchase_date: string
+  description?: string
+  status: 'active' | 'sold'
+  profit_loss?: number
+  profit_percentage?: number
+}
+
+export interface InvestmentStats {
+  total_invested: number
+  total_current: number
+  profit_loss: number
+  profit_percentage: number
+  investment_count: number
+  best_investment: {
+    name: string | null
+    profit_percentage: number
+  }
+}
+
+export interface Goal {
+  id: string
+  title: string
+  goal_type: 'economia' | 'investimento' | 'compra' | 'viagem' | 'outros'
+  target_amount: number
+  current_amount: number
+  period_type: 'mensal' | 'anual' | 'livre'
+  start_date: string
+  end_date: string
+  category_id?: number
+  status: 'active' | 'completed' | 'paused'
+  progress_percentage: number
+}
+
+export interface GoalStats {
+  total_goals: number
+  completed_goals: number
+  total_target_amount: number
+  total_current_amount: number
+  average_progress: number
+  best_goal: {
+    title: string | null
+    progress: number
+  }
+}
+
 // API Methods
 export const apiService = {
   // Transactions
@@ -146,16 +197,7 @@ export const apiService = {
       return []
     }
   },
-
-  async createCategory(category: Omit<Category, 'id' | 'transactionCount' | 'totalAmount'>): Promise<Category> {
-    try {
-      const response = await api.post('/categories', category)
-      return response.data.data || response.data
-    } catch (error) {
-      console.error('Erro ao criar categoria:', error)
-      throw error
-    }
-  },
+  // create/delete category methods intentionally removed because Categories page was removed
 
   // Dashboard
   async getDashboardStats(): Promise<DashboardStats> {
@@ -183,6 +225,126 @@ export const apiService = {
   async healthCheck(): Promise<{ status: string; message: string }> {
     const response = await api.get('/test')
     return response.data
+  },
+
+  // Investments
+  async getInvestments(): Promise<Investment[]> {
+    try {
+      const response = await api.get('/investments')
+      return response.data.data || response.data || []
+    } catch (error) {
+      console.error('Erro ao buscar investimentos:', error)
+      return []
+    }
+  },
+
+  async getInvestment(id: string): Promise<Investment> {
+    try {
+      const response = await api.get(`/investments/${id}`)
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao buscar investimento:', error)
+      throw error
+    }
+  },
+
+  async createInvestment(investment: Omit<Investment, 'id' | 'status' | 'profit_loss' | 'profit_percentage'>): Promise<Investment> {
+    try {
+      const response = await api.post('/investments', investment)
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao criar investimento:', error)
+      throw error
+    }
+  },
+
+  async updateInvestment(id: string, investment: Partial<Investment>): Promise<Investment> {
+    try {
+      const response = await api.put(`/investments/${id}`, investment)
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao atualizar investimento:', error)
+      throw error
+    }
+  },
+
+  async deleteInvestment(id: string): Promise<void> {
+    try {
+      await api.delete(`/investments/${id}`)
+    } catch (error) {
+      console.error('Erro ao deletar investimento:', error)
+      throw error
+    }
+  },
+
+  async getInvestmentStats(): Promise<InvestmentStats> {
+    try {
+      const response = await api.get('/investments/stats')
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas de investimentos:', error)
+      throw error
+    }
+  },
+
+  // Goals
+  async getGoals(): Promise<{ data: Goal[] }> {
+    try {
+      const response = await api.get('/goals')
+      return response.data
+    } catch (error) {
+      console.error('Erro ao buscar metas:', error)
+      throw error
+    }
+  },
+
+  async getGoal(id: string): Promise<Goal> {
+    try {
+      const response = await api.get(`/goals/${id}`)
+      return response.data.data
+    } catch (error) {
+      console.error('Erro ao buscar meta:', error)
+      throw error
+    }
+  },
+
+  async createGoal(goal: Omit<Goal, 'id' | 'status' | 'progress_percentage'>): Promise<Goal> {
+    try {
+      const response = await api.post('/goals', goal)
+      return response.data.data
+    } catch (error) {
+      console.error('Erro ao criar meta:', error)
+      throw error
+    }
+  },
+
+  async updateGoal(id: string, goal: Partial<Goal>): Promise<Goal> {
+    try {
+      const response = await api.put(`/goals/${id}`, goal)
+      return response.data.data
+    } catch (error) {
+      console.error('Erro ao atualizar meta:', error)
+      throw error
+    }
+  },
+
+  async deleteGoal(id: string): Promise<void> {
+    try {
+      await api.delete(`/goals/${id}`)
+    } catch (error) {
+      console.error('Erro ao deletar meta:', error)
+      throw error
+    }
+  },
+
+  async getGoalStats(): Promise<GoalStats> {
+    try {
+      const response = await api.get('/goals/stats')
+      return response.data.data || response.data
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas de metas:', error)
+      throw error
+    }
   }
 }
 
