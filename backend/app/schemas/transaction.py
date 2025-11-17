@@ -27,6 +27,7 @@ class TransactionResponse(TransactionBase):
     user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+    category: Optional[str] = None  # Nome da categoria
     
     class Config:
         from_attributes = True

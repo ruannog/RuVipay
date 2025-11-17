@@ -6,11 +6,10 @@ interface Investment {
   id: string
   name: string
   type: string
-  initial_amount: number
-  current_amount: number
+  amount_invested: number
+  current_value: number
   purchase_date: string
   description?: string
-  status?: 'active' | 'sold'
 }
 
 interface InvestmentModalProps {
@@ -23,8 +22,8 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
   const [formData, setFormData] = useState({
     name: '',
     type: 'Renda Fixa',
-    initial_amount: '',
-    current_amount: '',
+    amount_invested: '',
+    current_value: '',
     purchase_date: new Date().toISOString().split('T')[0],
     description: ''
   })
@@ -50,8 +49,8 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
       setFormData({
         name: investment.name,
         type: investment.type,
-        initial_amount: investment.initial_amount.toString(),
-        current_amount: investment.current_amount.toString(),
+        amount_invested: investment.amount_invested.toString(),
+        current_value: investment.current_value.toString(),
         purchase_date: investment.purchase_date.split('T')[0], // Remove time part if exists
         description: investment.description || ''
       })
@@ -59,8 +58,8 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
       setFormData({
         name: '',
         type: 'Renda Fixa',
-        initial_amount: '',
-        current_amount: '',
+        amount_invested: '',
+        current_value: '',
         purchase_date: new Date().toISOString().split('T')[0],
         description: ''
       })
@@ -77,8 +76,8 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
           investment: {
             name: formData.name,
             type: formData.type,
-            initial_amount: parseFloat(formData.initial_amount),
-            current_amount: parseFloat(formData.current_amount),
+            amount_invested: parseFloat(formData.amount_invested),
+            current_value: parseFloat(formData.current_value),
             purchase_date: formData.purchase_date,
             description: formData.description
           }
@@ -88,8 +87,8 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
         const result = await createInvestmentMutation.mutateAsync({
           name: formData.name,
           type: formData.type,
-          initial_amount: parseFloat(formData.initial_amount),
-          current_amount: parseFloat(formData.current_amount),
+          amount_invested: parseFloat(formData.amount_invested),
+          current_value: parseFloat(formData.current_value),
           purchase_date: formData.purchase_date,
           description: formData.description
         })
@@ -101,8 +100,8 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
       setFormData({
         name: '',
         type: 'Renda Fixa',
-        initial_amount: '',
-        current_amount: '',
+        amount_invested: '',
+        current_value: '',
         purchase_date: new Date().toISOString().split('T')[0],
         description: ''
       })
@@ -190,7 +189,7 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
 
                 {/* Initial Amount */}
                 <div>
-                  <label htmlFor="initial_amount" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="amount_invested" className="block text-sm font-medium text-gray-700">
                     Valor Inicial Investido
                   </label>
                   <div className="mt-1 relative rounded-md shadow-sm">
@@ -199,9 +198,9 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
                     </div>
                     <input
                       type="number"
-                      id="initial_amount"
-                      name="initial_amount"
-                      value={formData.initial_amount}
+                      id="amount_invested"
+                      name="amount_invested"
+                      value={formData.amount_invested}
                       onChange={handleInputChange}
                       step="0.01"
                       min="0"
@@ -214,7 +213,7 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
 
                 {/* Current Amount */}
                 <div>
-                  <label htmlFor="current_amount" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="current_value" className="block text-sm font-medium text-gray-700">
                     Valor Atual
                   </label>
                   <div className="mt-1 relative rounded-md shadow-sm">
@@ -223,9 +222,9 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
                     </div>
                     <input
                       type="number"
-                      id="current_amount"
-                      name="current_amount"
-                      value={formData.current_amount}
+                      id="current_value"
+                      name="current_value"
+                      value={formData.current_value}
                       onChange={handleInputChange}
                       step="0.01"
                       min="0"
@@ -269,17 +268,17 @@ const InvestmentModal: React.FC<InvestmentModalProps> = ({ isOpen, onClose, inve
                 </div>
 
                 {/* Profit/Loss Indicator */}
-                {formData.initial_amount && formData.current_amount && (
+                {formData.amount_invested && formData.current_value && (
                   <div className="bg-gray-50 p-3 rounded-md">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Resultado:</span>
                       <span className={`text-sm font-medium ${
-                        parseFloat(formData.current_amount) >= parseFloat(formData.initial_amount)
+                        parseFloat(formData.current_value) >= parseFloat(formData.amount_invested)
                           ? 'text-green-600'
                           : 'text-red-600'
                       }`}>
-                        {parseFloat(formData.current_amount) >= parseFloat(formData.initial_amount) ? '+' : ''}
-                        {(parseFloat(formData.current_amount) - parseFloat(formData.initial_amount)).toLocaleString('pt-BR', {
+                        {parseFloat(formData.current_value) >= parseFloat(formData.amount_invested) ? '+' : ''}
+                        {(parseFloat(formData.current_value) - parseFloat(formData.amount_invested)).toLocaleString('pt-BR', {
                           style: 'currency',
                           currency: 'BRL'
                         })}

@@ -60,7 +60,7 @@ export const useCreateTransaction = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (transaction: Omit<Transaction, 'id' | 'status'>) => 
+    mutationFn: (transaction: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => 
       apiService.createTransaction(transaction),
     onSuccess: () => {
       // Invalidar queries relacionadas para refetch automático
@@ -154,7 +154,7 @@ export const useCreateInvestment = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (investment: Omit<Investment, 'id' | 'status' | 'profit_loss' | 'profit_percentage'>) => 
+    mutationFn: (investment: Omit<Investment, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'profit_loss' | 'profit_loss_percentage'>) => 
       apiService.createInvestment(investment),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investments'] })

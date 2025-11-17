@@ -36,11 +36,16 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, tr
   // Preencher formulário quando estiver editando
   useEffect(() => {
     if (transaction) {
+      // Encontrar o category_id a partir do nome da categoria
+      const matchingCategory = categories.find(
+        (cat: any) => cat.name === transaction.category && cat.type === transaction.type
+      )
+      
       setFormData({
         description: transaction.description,
         amount: transaction.amount.toString(),
         type: transaction.type,
-        category: transaction.category || '',
+        category: matchingCategory ? matchingCategory.id.toString() : '',
         date: transaction.date.split('T')[0] // Remove time part if exists
       })
     } else {
@@ -52,12 +57,18 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, tr
         date: new Date().toISOString().split('T')[0]
       })
     }
-  }, [transaction, isOpen])
+  }, [transaction, isOpen, categories])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     try {
+      const categoryId = parseInt(formData.category)
+      if (!categoryId) {
+        alert('Por favor, selecione uma categoria')
+        return
+      }
+
       if (isEditing && transaction) {
         await updateTransactionMutation.mutateAsync({
           id: transaction.id,
@@ -65,7 +76,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, tr
             description: formData.description,
             amount: parseFloat(formData.amount),
             type: formData.type,
-            category: formData.category,
+            category_id: categoryId,
             date: formData.date
           }
         })
@@ -74,7 +85,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, tr
           description: formData.description,
           amount: parseFloat(formData.amount),
           type: formData.type,
-          category: formData.category,
+          category_id: categoryId,
           date: formData.date
         })
       }
@@ -219,9 +230,9 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, tr
                   >
                     <option value="">Selecione uma categoria</option>
                     {categories
-                      .filter(cat => cat.type === formData.type)
-                      .map(category => (
-                        <option key={category.id} value={category.name}>
+                      .filter((cat: any) => cat.type === formData.type)
+                      .map((category: any) => (
+                        <option key={category.id} value={category.id}>
                           {category.name}
                         </option>
                       ))

@@ -25,9 +25,12 @@ export interface Transaction {
   description: string
   amount: number
   type: 'income' | 'expense'
-  category?: string
+  category_id: number
   date: string
-  status: 'completed' | 'pending'
+  notes?: string
+  user_id?: number
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Category {
@@ -64,13 +67,15 @@ export interface Investment {
   id: string
   name: string
   type: string
-  initial_amount: number
-  current_amount: number
+  amount_invested: number
+  current_value: number
   purchase_date: string
   description?: string
-  status: 'active' | 'sold'
+  user_id: number
+  created_at?: string
+  updated_at?: string
   profit_loss?: number
-  profit_percentage?: number
+  profit_loss_percentage?: number
 }
 
 export interface InvestmentStats {
@@ -158,7 +163,7 @@ export const apiService = {
     }
   },
 
-  async createTransaction(transaction: Omit<Transaction, 'id' | 'status'>): Promise<Transaction> {
+  async createTransaction(transaction: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Transaction> {
     try {
       const response = await api.post('/transactions', transaction)
       return response.data.data || response.data
@@ -248,7 +253,7 @@ export const apiService = {
     }
   },
 
-  async createInvestment(investment: Omit<Investment, 'id' | 'status' | 'profit_loss' | 'profit_percentage'>): Promise<Investment> {
+  async createInvestment(investment: Omit<Investment, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'profit_loss' | 'profit_loss_percentage'>): Promise<Investment> {
     try {
       const response = await api.post('/investments', investment)
       return response.data.data || response.data
@@ -290,8 +295,9 @@ export const apiService = {
   // Goals
   async getGoals(): Promise<{ data: Goal[] }> {
     try {
-      const response = await api.get('/goals')
-      return response.data
+      const response = await api.get('/goals/')
+      // O backend retorna lista direta, não { data: [] }
+      return { data: response.data }
     } catch (error) {
       console.error('Erro ao buscar metas:', error)
       throw error
@@ -301,7 +307,7 @@ export const apiService = {
   async getGoal(id: string): Promise<Goal> {
     try {
       const response = await api.get(`/goals/${id}`)
-      return response.data.data
+      return response.data
     } catch (error) {
       console.error('Erro ao buscar meta:', error)
       throw error
@@ -310,8 +316,9 @@ export const apiService = {
 
   async createGoal(goal: Omit<Goal, 'id' | 'status' | 'progress_percentage'>): Promise<Goal> {
     try {
-      const response = await api.post('/goals', goal)
-      return response.data.data
+      const response = await api.post('/goals/', goal)
+      // O backend retorna o objeto diretamente, não { data: {} }
+      return response.data
     } catch (error) {
       console.error('Erro ao criar meta:', error)
       throw error
@@ -321,7 +328,7 @@ export const apiService = {
   async updateGoal(id: string, goal: Partial<Goal>): Promise<Goal> {
     try {
       const response = await api.put(`/goals/${id}`, goal)
-      return response.data.data
+      return response.data
     } catch (error) {
       console.error('Erro ao atualizar meta:', error)
       throw error

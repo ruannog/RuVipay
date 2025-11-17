@@ -4,7 +4,7 @@ from typing import Optional
 
 class InvestmentBase(BaseModel):
     name: str
-    investment_type: str  # 'acao', 'fundo', 'cdi', 'tesouro', 'cripto', 'outros'
+    type: str  # 'stocks', 'crypto', 'funds', 'real_estate', etc
     amount_invested: float
     current_value: float
     purchase_date: datetime
@@ -15,7 +15,7 @@ class InvestmentCreate(InvestmentBase):
 
 class InvestmentUpdate(BaseModel):
     name: Optional[str] = None
-    investment_type: Optional[str] = None
+    type: Optional[str] = None
     amount_invested: Optional[float] = None
     current_value: Optional[float] = None
     purchase_date: Optional[datetime] = None
@@ -24,6 +24,8 @@ class InvestmentUpdate(BaseModel):
 class InvestmentResponse(InvestmentBase):
     id: int
     user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
     profit_loss: Optional[float] = None
     profit_loss_percentage: Optional[float] = None
     
@@ -44,4 +46,4 @@ class InvestmentResponse(InvestmentBase):
         return 0.0
     
     class Config:
-        orm_mode = True
+        from_attributes = True

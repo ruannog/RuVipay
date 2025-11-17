@@ -21,13 +21,15 @@ interface Investment {
   id: string
   name: string
   type: string
-  initial_amount: number
-  current_amount: number
+  amount_invested: number
+  current_value: number
   purchase_date: string
   description?: string
-  status: 'active' | 'sold'
+  user_id?: number
+  created_at?: string
+  updated_at?: string
   profit_loss?: number
-  profit_percentage?: number
+  profit_loss_percentage?: number
 }
 
 const Investments = () => {
@@ -130,8 +132,8 @@ const Investments = () => {
   }
 
   // Calcular totais
-  const totalInvested = investments.reduce((sum, inv) => sum + inv.initial_amount, 0)
-  const totalCurrent = investments.reduce((sum, inv) => sum + inv.current_amount, 0)
+  const totalInvested = investments.reduce((sum, inv) => sum + inv.amount_invested, 0)
+  const totalCurrent = investments.reduce((sum, inv) => sum + inv.current_value, 0)
   const totalProfit = totalCurrent - totalInvested
   const totalProfitPercentage = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0
 
@@ -340,8 +342,8 @@ const Investments = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {investments.map((investment) => {
-              const profitLoss = (investment.profit_loss ?? (investment.current_amount - investment.initial_amount))
-              const profitPercentage = investment.profit_percentage ?? ((profitLoss / investment.initial_amount) * 100)
+              const profitLoss = (investment.profit_loss ?? (investment.current_value - investment.amount_invested))
+              const profitPercentage = investment.profit_loss_percentage ?? ((profitLoss / investment.amount_invested) * 100)
               
               return (
                 <tr key={investment.id} className="hover:bg-gray-50">

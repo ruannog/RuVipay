@@ -15,8 +15,13 @@ def get_transactions_by_user(
     end_date: Optional[datetime] = None,
     transaction_type: Optional[str] = None,
     category_id: Optional[int] = None
-) -> List[Transaction]:
-    query = db.query(Transaction).filter(Transaction.user_id == user_id)
+) -> List[Dict[str, Any]]:
+    query = db.query(
+        Transaction,
+        Category.name.label('category_name')
+    ).outerjoin(
+        Category, Transaction.category_id == Category.id
+    ).filter(Transaction.user_id == user_id)
     
     if start_date:
         query = query.filter(Transaction.date >= start_date)
@@ -27,27 +32,91 @@ def get_transactions_by_user(
     if category_id:
         query = query.filter(Transaction.category_id == category_id)
     
-    return query.order_by(desc(Transaction.date)).offset(skip).limit(limit).all()
+    results = query.order_by(desc(Transaction.date)).offset(skip).limit(limit).all()
+    
+    # Transformar resultados para incluir o nome da categoria
+    transactions = []
+    for transaction, category_name in results:
+        transaction_dict = {
+            "id": transaction.id,
+            "description": transaction.description,
+            "amount": transaction.amount,
+            "type": transaction.type,
+            "date": transaction.date,
+            "notes": transaction.notes,
+            "category_id": transaction.category_id,
+            "user_id": transaction.user_id,
+            "created_at": transaction.created_at,
+            "updated_at": transaction.updated_at,
+            "category": category_name or "Sem categoria"
+        }
+        transactions.append(transaction_dict)
+    
+    return transactions
 
-def get_transaction_by_id(db: Session, transaction_id: int, user_id: int) -> Optional[Transaction]:
-    return db.query(Transaction).filter(
+def get_transaction_by_id(db: Session, transaction_id: int, user_id: int) -> Optional[Dict[str, Any]]:
+    result = db.query(
+        Transaction,
+        Category.name.label('category_name')
+    ).outerjoin(
+        Category, Transaction.category_id == Category.id
+    ).filter(
         and_(Transaction.id == transaction_id, Transaction.user_id == user_id)
     ).first()
+    
+    if not result:
+        return None
+    
+    transaction, category_name = result
+    return {
+        "id": transaction.id,
+        "description": transaction.description,
+        "amount": transaction.amount,
+        "type": transaction.type,
+        "date": transaction.date,
+        "notes": transaction.notes,
+        "category_id": transaction.category_id,
+        "user_id": transaction.user_id,
+        "created_at": transaction.created_at,
+        "updated_at": transaction.updated_at,
+        "category": category_name or "Sem categoria"
+    }
 
-def create_transaction(db: Session, transaction: TransactionCreate, user_id: int) -> Transaction:
+def create_transaction(db: Session, transaction: TransactionCreate, user_id: int) -> Dict[str, Any]:
     db_transaction = Transaction(**transaction.dict(), user_id=user_id)
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)
-    return db_transaction
+    
+    # Buscar o nome da categoria
+    category = db.query(Category).filter(Category.id == db_transaction.category_id).first()
+    category_name = category.name if category else "Sem categoria"
+    
+    return {
+        "id": db_transaction.id,
+        "description": db_transaction.description,
+        "amount": db_transaction.amount,
+        "type": db_transaction.type,
+        "date": db_transaction.date,
+        "notes": db_transaction.notes,
+        "category_id": db_transaction.category_id,
+        "user_id": db_transaction.user_id,
+        "created_at": db_transaction.created_at,
+        "updated_at": db_transaction.updated_at,
+        "category": category_name
+    }
 
 def update_transaction(
     db: Session, 
     transaction_id: int, 
     transaction_update: TransactionUpdate, 
     user_id: int
-) -> Optional[Transaction]:
-    db_transaction = get_transaction_by_id(db, transaction_id, user_id)
+) -> Optional[Dict[str, Any]]:
+    # Buscar a transação diretamente do banco
+    db_transaction = db.query(Transaction).filter(
+        and_(Transaction.id == transaction_id, Transaction.user_id == user_id)
+    ).first()
+    
     if not db_transaction:
         return None
     
@@ -57,10 +126,31 @@ def update_transaction(
     
     db.commit()
     db.refresh(db_transaction)
-    return db_transaction
+    
+    # Buscar o nome da categoria
+    category = db.query(Category).filter(Category.id == db_transaction.category_id).first()
+    category_name = category.name if category else "Sem categoria"
+    
+    return {
+        "id": db_transaction.id,
+        "description": db_transaction.description,
+        "amount": db_transaction.amount,
+        "type": db_transaction.type,
+        "date": db_transaction.date,
+        "notes": db_transaction.notes,
+        "category_id": db_transaction.category_id,
+        "user_id": db_transaction.user_id,
+        "created_at": db_transaction.created_at,
+        "updated_at": db_transaction.updated_at,
+        "category": category_name
+    }
 
 def delete_transaction(db: Session, transaction_id: int, user_id: int) -> bool:
-    db_transaction = get_transaction_by_id(db, transaction_id, user_id)
+    # Buscar a transação diretamente do banco
+    db_transaction = db.query(Transaction).filter(
+        and_(Transaction.id == transaction_id, Transaction.user_id == user_id)
+    ).first()
+    
     if not db_transaction:
         return False
     
@@ -136,8 +226,33 @@ def get_monthly_summary(db: Session, user_id: int, year: int, month: int) -> Dic
         ]
     }
 
-def get_recent_transactions(db: Session, user_id: int, limit: int = 5) -> List[Transaction]:
+def get_recent_transactions(db: Session, user_id: int, limit: int = 5) -> List[Dict[str, Any]]:
     """Obtém as transações mais recentes"""
-    return db.query(Transaction).filter(
+    results = db.query(
+        Transaction,
+        Category.name.label('category_name')
+    ).outerjoin(
+        Category, Transaction.category_id == Category.id
+    ).filter(
         Transaction.user_id == user_id
     ).order_by(desc(Transaction.date)).limit(limit).all()
+    
+    # Transformar resultados para incluir o nome da categoria
+    transactions = []
+    for transaction, category_name in results:
+        transaction_dict = {
+            "id": transaction.id,
+            "description": transaction.description,
+            "amount": transaction.amount,
+            "type": transaction.type,
+            "date": transaction.date,
+            "notes": transaction.notes,
+            "category_id": transaction.category_id,
+            "user_id": transaction.user_id,
+            "created_at": transaction.created_at,
+            "updated_at": transaction.updated_at,
+            "category": category_name or "Sem categoria"
+        }
+        transactions.append(transaction_dict)
+    
+    return transactions

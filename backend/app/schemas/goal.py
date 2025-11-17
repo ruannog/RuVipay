@@ -4,10 +4,11 @@ from typing import Optional
 
 class GoalBase(BaseModel):
     title: str
-    goal_type: str  # 'economia', 'investimento', 'compra', 'viagem', 'outros'
+    description: Optional[str] = None
+    goal_type: str  # 'expense_limit', 'savings_target', 'investment_goal'
     target_amount: float
     current_amount: float = 0.0
-    period_type: str  # 'mensal', 'anual', 'livre'
+    period_type: str  # 'monthly', 'yearly', 'custom'
     start_date: datetime
     end_date: datetime
     category_id: Optional[int] = None
@@ -17,6 +18,7 @@ class GoalCreate(GoalBase):
 
 class GoalUpdate(BaseModel):
     title: Optional[str] = None
+    description: Optional[str] = None
     goal_type: Optional[str] = None
     target_amount: Optional[float] = None
     current_amount: Optional[float] = None
@@ -28,6 +30,10 @@ class GoalUpdate(BaseModel):
 class GoalResponse(GoalBase):
     id: int
     user_id: int
+    is_active: bool
+    status: Optional[str] = None  # Para compatibilidade com frontend
+    created_at: datetime
+    updated_at: Optional[datetime] = None
     progress_percentage: Optional[float] = None
     remaining_amount: Optional[float] = None
     is_completed: Optional[bool] = None
@@ -55,8 +61,22 @@ class GoalResponse(GoalBase):
         current = values.get('current_amount', 0)
         return current >= target
     
+    @validator('status', always=True)
+    def calculate_status(cls, v, values):
+        """Calcula o status da meta baseado em is_active e is_completed"""
+        is_active = values.get('is_active', True)
+        current = values.get('current_amount', 0)
+        target = values.get('target_amount', 0)
+        
+        if current >= target:
+            return 'completed'
+        elif is_active:
+            return 'active'
+        else:
+            return 'paused'
+    
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class GoalSummary(BaseModel):
     """Resumo das metas do usuário"""
